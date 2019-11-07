@@ -1,7 +1,6 @@
 package benchmarks
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -40,13 +39,13 @@ func BoltBatch() {
 	}
 
 	// Read value back in a different read-only transaction.
-	if err := db.View(func(tx *bolt.Tx) error {
-		value := tx.Bucket([]byte("widgets")).Get([]byte("foo"))
-		fmt.Printf("[batch] The value of 'foo' is: %s\n", value)
-		return nil
-	}); err != nil {
-		log.Fatal(err)
-	}
+	//if err := db.View(func(tx *bolt.Tx) error {
+	//	value := tx.Bucket([]byte("widgets")).Get([]byte("foo"))
+	//	fmt.Printf("[batch] The value of 'foo' is: %s\n", value)
+	//	return nil
+	//}); err != nil {
+	//	log.Fatal(err)
+	//}
 
 	// Close database to release file lock.
 	if err := db.Close(); err != nil {
@@ -85,13 +84,13 @@ func BoltUpdate() {
 	}
 
 	// Read value back in a different read-only transaction.
-	if err := db.View(func(tx *bolt.Tx) error {
-		value := tx.Bucket([]byte("widgets")).Get([]byte("foo"))
-		fmt.Printf("[update] The value of 'foo' is: %s\n", value)
-		return nil
-	}); err != nil {
-		log.Fatal(err)
-	}
+	//if err := db.View(func(tx *bolt.Tx) error {
+	//	value := tx.Bucket([]byte("widgets")).Get([]byte("foo"))
+	//	fmt.Printf("[update] The value of 'foo' is: %s\n", value)
+	//	return nil
+	//}); err != nil {
+	//	log.Fatal(err)
+	//}
 
 	// Close database to release file lock.
 	if err := db.Close(); err != nil {
