@@ -10,4 +10,5 @@ require (
 	github.com/philippgille/gokv v0.6.0
 	github.com/philippgille/gokv/dynamodb v0.6.0
 	github.com/philippgille/gokv/redis v0.6.0
+	go.etcd.io/bbolt v1.3.3
 )

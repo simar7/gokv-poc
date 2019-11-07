@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -9,13 +10,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	goredis "github.com/go-redis/redis"
-	"github.com/philippgille/gokv/redis"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 
 	awsdynamodb "github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/dynamodb"
+	"github.com/philippgille/gokv/redis"
+	"github.com/simar7/gokv-poc/benchmarks"
 )
 
 type foo struct {
@@ -30,16 +32,27 @@ var optionsDynamoDB = dynamodb.Options{
 }
 
 func main() {
-	checkConnections()
+	modeOp := flag.String("op", "demo", "mode of operation: default is demo mode")
+	flag.Parse()
 
-	clientDynamoDB := setupDynamoClient()
-	defer clientDynamoDB.Close()
-	interactWithStore(clientDynamoDB)
+	switch *modeOp {
+	case "demo":
+		checkConnections()
 
-	clientRedis := setupRedisClient()
-	defer clientRedis.Close()
-	interactWithStore(clientRedis)
+		clientDynamoDB := setupDynamoClient()
+		defer clientDynamoDB.Close()
+		interactWithStore(clientDynamoDB)
 
+		clientRedis := setupRedisClient()
+		defer clientRedis.Close()
+		interactWithStore(clientRedis)
+	case "bench":
+		log.Println("running boltdb benchmarks...")
+		benchmarks.BoltUpdate()
+		benchmarks.BoltBatch()
+	default:
+		log.Fatalf("invalid mode specified: %s", *modeOp)
+	}
 }
 
 func checkConnections() {

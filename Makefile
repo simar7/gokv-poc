@@ -16,6 +16,10 @@ demo:
 	@echo "cleaning up..."
 	make clean
 
+bench:
+	@echo "performing benchmarks..."
+	./gokv-poc -op=bench
+
 dynamodb:
 	docker run -p 8000:8000 --name localdynamodb -d amazon/dynamodb-local
 
