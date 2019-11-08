@@ -1,6 +1,7 @@
 BenchmarkBoltUpdate-8             	      40	  31030423 ns/op	   34689 B/op	      94 allocs/op
+BenchmarkBoltUpdateGoRoutines-8   	       1	14173639231 ns/op	15256184 B/op	   65263 allocs/op
 BenchmarkBoltBatch-8              	      28	  41902012 ns/op	   35055 B/op	     100 allocs/op
 BenchmarkBoltBatchGoRoutines-8    	      28	  39747400 ns/op	 2063929 B/op	   51795 allocs/op
-BenchmarkBoltUpdateGoRoutines-8   	       1	14173639231 ns/op	15256184 B/op	   65263 allocs/op
+
 BenchmarkDynamoBatchWrite-8       	     402	   2904608 ns/op	   23691 B/op	     441 allocs/op
 BenchmarkDynamoUpdate-8           	     415	   2608371 ns/op	   23798 B/op	     412 allocs/op
