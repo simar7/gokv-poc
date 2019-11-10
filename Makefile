@@ -10,7 +10,6 @@ demo:
 	make build
 	@echo "starting docker db containers..."
 	make dynamodb
-	make redis
 	@echo "writing to dbs..."
 	./gokv-poc
 	@echo "cleaning up..."
@@ -22,9 +21,6 @@ bench:
 
 dynamodb:
 	docker run -p 8000:8000 --name localdynamodb -d amazon/dynamodb-local
-
-redis:
-	docker run -p 6379:6379 --name localredis -d redis
 
 all:
 	make clean

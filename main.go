@@ -4,20 +4,20 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/simar7/gokv/types"
+
 	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	goredis "github.com/go-redis/redis"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 
 	awsdynamodb "github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/philippgille/gokv"
-	"github.com/philippgille/gokv/dynamodb"
-	"github.com/philippgille/gokv/redis"
+	"github.com/simar7/gokv"
 	"github.com/simar7/gokv-poc/benchmarks"
+	"github.com/simar7/gokv/dynamodb"
 )
 
 type foo struct {
@@ -25,10 +25,12 @@ type foo struct {
 }
 
 var customDynamoDBEndpoint = "http://localhost:8000"
-var testRedisDbNumber = 15
 var optionsDynamoDB = dynamodb.Options{
 	Region:         endpoints.UsWest2RegionID,
+	AWSAccessKeyID: "fookey",
+	AWSSecretAccessKey: "barsecretkey",
 	CustomEndpoint: customDynamoDBEndpoint,
+	TableName: "gokv",
 }
 
 func main() {
@@ -41,11 +43,10 @@ func main() {
 
 		clientDynamoDB := setupDynamoClient()
 		defer clientDynamoDB.Close()
+
+		// TODO: create a function that sets up the table for interaction
 		interactWithStore(clientDynamoDB)
 
-		clientRedis := setupRedisClient()
-		defer clientRedis.Close()
-		interactWithStore(clientRedis)
 	case "bench":
 		log.Println("running boltdb benchmarks...")
 		benchmarks.BoltUpdate()
@@ -60,32 +61,15 @@ func checkConnections() {
 		log.Fatal("couldn't establish connection with dynamodb")
 	}
 	log.Println("dynamodb session established.")
-
-	if !checkConnectionRedis(testRedisDbNumber) {
-		log.Fatal("couldn't establish connection with redis")
-	}
-	log.Println("redis session established.")
 }
 
-func setupDynamoClient() dynamodb.Client {
+func setupDynamoClient() dynamodb.Store {
 	log.Println("commencing ops with dynamodb...")
-	clientDynamoDB, err := dynamodb.NewClient(optionsDynamoDB)
+	clientDynamoDB, err := dynamodb.NewStore(optionsDynamoDB)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return clientDynamoDB
-}
-
-func setupRedisClient() redis.Client {
-	log.Println("commencing ops with redis...")
-	optionsRedis := redis.Options{
-		DB: testRedisDbNumber,
-	}
-	clientRedis, err := redis.NewClient(optionsRedis)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return clientRedis
 }
 
 // checkConnectionDynamoDB returns true if a connection could be made, false otherwise.
@@ -111,48 +95,54 @@ func checkConnectionDynamoDB() bool {
 	return true
 }
 
-// checkConnection returns true if a connection could be made, false otherwise.
-func checkConnectionRedis(number int) bool {
-	client := goredis.NewClient(&goredis.Options{
-		Addr:     redis.DefaultOptions.Address,
-		Password: redis.DefaultOptions.Password,
-		DB:       number,
-	})
-	defer client.Close()
-	err := client.Ping().Err()
-	if err != nil {
-		log.Printf("An error occurred during testing the connection to the server: %v\n", err)
-		return false
-	}
-	return true
-}
-
 // interactWithStore stores, retrieves, prints and deletes a value.
 // It's completely independent of the store implementation.
 func interactWithStore(store gokv.Store) {
 	// Store value
 	val := foo{
+		Bar: "bar",
+	}
+	val2 := foo{
 		Bar: "baz",
 	}
-	err := store.Set("foo123", val)
+
+	err := store.BatchSet(types.BatchSetItemInput{
+		Keys:   []string{"foo", "faz"},
+		Values: []foo{val, val2},
+	})
 	if err != nil {
 		panic(err)
 	}
 
 	// Retrieve value
-	retrievedVal := new(foo)
-	found, err := store.Get("foo123", retrievedVal)
+	var retrievedVal1, retrievedVal2 foo
+	found1, err := store.Get(types.GetItemInput{Key:"foo", Value: &retrievedVal1})
 	if err != nil {
 		panic(err)
 	}
-	if !found {
+	if !found1 {
 		panic("Value not found")
 	}
 
-	fmt.Printf("foo: %+v\n", *retrievedVal) // Prints `foo: {Bar:baz}`
+	found2, err := store.Get(types.GetItemInput{Key:"faz", Value: &retrievedVal2})
+	if err != nil {
+		panic(err)
+	}
+	if !found2 {
+		panic("Value not found")
+	}
+
+	fmt.Printf("foo: %+v\n", retrievedVal1)
+	fmt.Printf("faz: %+v\n", retrievedVal2)
 
 	// Delete value
-	err = store.Delete("foo123")
+	err = store.Delete(types.DeleteItemInput{Key:"foo"})
+	if err != nil {
+		panic(err)
+	}
+
+	// Delete value
+	err = store.Delete(types.DeleteItemInput{Key:"faz"})
 	if err != nil {
 		panic(err)
 	}
